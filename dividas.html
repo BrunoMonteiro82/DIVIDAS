@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créditos — Bruno Monteiro</title>
+<script src="https://cloudflare.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; background: #f1f5f9; color: #1e293b; margin: 0; padding: 12px; }
+  .box { max-width: 900px; margin: 0 auto 12px auto; background: #fff; padding: 14px; border-radius: 8px; border: 1px solid #cbd5e1; }
+  .edit-mode { border: 2px solid #d97706; background: #fffbeb; }
+  .top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  h1 { margin: 0; font-size: 1.25rem; color: #0f172a; }
+  h2 { margin: 0 0 10px 0; font-size: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  label { display: block; font-size: 11.5px; font-weight: bold; margin-bottom: 3px; }
+  input, select, textarea { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+  .btn { padding: 8px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; color: #fff; display: inline-flex; align-items: center; gap: 4px; }
+  .b-blue { background: #1d4ed8; } .b-word { background: #2b579a; } .b-pdf { background: #b91c1c; }
+  .b-edit { background: #d97706; } .b-abate { background: #15803d; } .b-gray { background: #475569; } .b-dark { background: #0f172a; }
+  .b-light { background: #fff; color: #0f172a; border: 1px solid #cbd5e1; }
+  .item { border-bottom: 1px solid #e2e8f0; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .item:last-child { border-bottom: none; }
+  .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .acts { display: flex; gap: 4px; flex-wrap: wrap; }
+  .obs { background: #f8fafc; border-left: 3px solid #1d4ed8; padding: 5px 8px; margin-top: 5px; font-size: 12.5px; }
+  #modalPdf { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #cbd5e1; z-index: 9999; overflow: auto; }
+  .pdf-bar { position: sticky; top: 0; background: #0f172a; color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; z-index: 10; }
+  #folhaA4 { width: 730px; margin: 16px auto; background: #fff; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-family: Calibri, Arial, sans-serif; color: #1e293b; font-size: 10pt; }
+  @media print {
+    body * { visibility: hidden; }
+    #folhaA4, #folhaA4 * { visibility: visible; }
+    #folhaA4 { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; }
+    .pdf-bar { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="appPrincipal">
+  <div class="box">
+    <div class="top">
+      <h1>💼 Controlo de Empréstimos — Bruno Monteiro</h1>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <button type="button" class="btn b-pdf" onclick="abrirDoc(null, true)">📕 Geral PDF</button>
+        <button type="button" class="btn b-word" onclick="abrirDoc(null, false)">📘 Geral Word</button>
+        <button type="button" class="btn b-dark" onclick="exportar()">💾 Guardar Cópia</button>
+        <button type="button" class="btn b-light" onclick="document.getElementById('fImp').click()">📂 Restaurar</button>
+        <button type="button" class="btn b-light" onclick="colarTxt()">📋 Colar Cópia</button>
+        <input type="file" id="fImp" style="display:none" onchange="lerFicheiro(event)">
+      </div>
+    </div>
+    <div style="font-weight:bold;font-size:14px;">
+      <span style="color:#dc2626;margin-right:14px;">Por Receber: <span id="tOwed">0,00 €</span></span>
+      <span style="color:#15803d;margin-right:14px;">Pago: <span id="tPaid">0,00 €</span></span>
+      <span id="stMsg" style="font-size:12px;color:#15803d;">✔ Ativo</span>
+    </div>
+  </div>
+
+  <div class="box">
+    <h2>👤 Titular / Credor</h2>
+    <div class="grid">
+      <div><label>Nome</label><input type="text" id="tNome" value="BRUNO MONTEIRO" oninput="gravar()"></div>
+      <div><label>MB WAY</label><input type="text" id="tTel" value="919627945" oninput="gravar()"></div>
+      <div><label>NIF (Opcional)</label><input type="text" id="tNif" oninput="gravar()"></div>
+    </div>
+  </div>
+
+  <div class="box" id="fBox">
+    <h2 id="fTit">➕ Registar Nova Dívida</h2>
+    <div class="grid">
+      <div><label>Devedor *</label><input type="text" id="fName" placeholder="Ex: Carlos Lopes"></div>
+      <div><label>Valor (€) *</label><input type="text" id="fVal" placeholder="Ex: 50,00"></div>
+      <div><label>Motivo</label><input type="text" id="fReason" placeholder="Ex: Empréstimo"></div>
+      <div><label>Data Empréstimo</label><input type="date" id="fLoanDate"></div>
+      <div><label>Data Limite</label><input type="date" id="fDate"></div>
+      <div><label>Pagamento</label><select id="fMethod"><option value="MB WAY / Numerário">MB WAY ou Numerário</option><option value="MB WAY">MB WAY</option><option value="Numerário">Numerário</option></select></div>
+      <div><label>Estado</label><select id="fStatus"><option value="unpaid">Por Pagar</option><option value="paid">Pago</option></select></div>
+    </div>
+    <div style="margin-top:8px;"><label>Obs.</label><textarea id="fObs" rows="2"></textarea></div>
+    <div style="margin-top:10px;display:flex;gap:8px;">
+      <button type="button" class="btn b-blue" style="flex:1;justify-content:center;padding:10px;font-size:14px;" id="bSub" onclick="salvar()">➕ Adicionar Dívida</button>
+      <button type="button" class="btn b-gray" style="display:none;" id="bCan" onclick="limpar()">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="box" id="lista">Sem registos.</div>
+</div>
+
+<div id="modalPdf">
+  <div class="pdf-bar">
+    <button type="button" class="btn b-gray" style="padding:10px 14px;font-size:14px;" onclick="fecharPdf()">⬅ Voltar</button>
+    <div style="display:flex;gap:8px;">
+      <button type="button" class="btn b-blue" style="padding:10px 14px;font-size:14px;" id="btnPartilharPdf" onclick="partilharPdfReal()">📤 Guardar / Enviar PDF</button>
+      <button type="button" class="btn b-pdf" style="padding:10px 14px;font-size:14px;" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+  </div>
+  <div id="folhaA4"></div>
+</div>
+<script>
+var KEY = 'app_dividas_bruno_monteiro_v1';
+var dados = new Array();
+var editId = null;
+var nomeArqAtual = 'Extrato.pdf';
+
+function hoje() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function fmtData(s) {
+  if (!s || s === 'A combinar') return 'A combinar';
+  var p = String(s).split('-');
+  if (p.length === 3) { var dia = p.pop(), mes = p.pop(), ano = p.pop(); return dia + '/' + mes + '/' + ano; }
+  return s;
+}
+function paraISO(s) {
+  if (!s || s.indexOf('/') === -1) return '';
+  var p = String(s).split('/');
+  if (p.length === 3) { var ano = p.pop(), mes = p.pop(), dia = p.pop(); return ano + '-' + mes + '-' + dia; }
+  return '';
+}
+function eur(v) { return Number(v).toFixed(2).replace('.', ',') + ' €'; }
+function jaPago(d) { return (typeof d.pagoVal === 'number') ? d.pagoVal : (d.pago ? Number(d.valor) : 0); }
+
+function iniciar() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var obj = JSON.parse(raw);
+      dados = obj.dividas || new Array();
+      if (obj.titular) {
+        document.getElementById('tNome').value = obj.titular.nome || 'BRUNO MONTEIRO';
+        document.getElementById('tTel').value = obj.titular.tel || '919627945';
+        document.getElementById('tNif').value = obj.titular.nif || '';
+      }
+    }
+  } catch (e) {}
+  document.getElementById('fLoanDate').value = hoje();
+  render();
+}
+
+function gravar() {
+  var pkg = { titular: { nome: document.getElementById('tNome').value || 'BRUNO MONTEIRO', tel: document.getElementById('tTel').value || '919627945', nif: document.getElementById('tNif').value }, dividas: dados };
+  try { localStorage.setItem(KEY, JSON.stringify(pkg)); document.getElementById('stMsg').innerText = '✔ Guardado'; } catch (e) {}
+}
+
+function exportar() {
+  gravar();
+  var pkg = { titular: { nome: document.getElementById('tNome').value, tel: document.getElementById('tTel').value, nif: document.getElementById('tNif').value }, dividas: dados };
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(new Array(JSON.stringify(pkg, null, 2)), { type: 'application/json' }));
+  a.download = 'Backup_Bruno_' + hoje() + '.json'; a.click();
+}
+
+function lerFicheiro(ev) {
+  var f = ev.target.files && ev.target.files.length ? ev.target.files.item(0) : null;
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function(e) { restaurarTxt(e.target.result); ev.target.value = ''; };
+  r.readAsText(f);
+}
+
+function colarTxt() { var t = prompt('Cola o texto do Backup (.json):'); if (t) restaurarTxt(t); }
+function restaurarTxt(t) {
+  try {
+    var obj = JSON.parse(t.trim());
+    if (obj && Array.isArray(obj.dividas)) {
+      dados = obj.dividas;
+      if (obj.titular) {
+        document.getElementById('tNome').value = obj.titular.nome || 'BRUNO MONTEIRO';
+        document.getElementById('tTel').value = obj.titular.tel || '919627945';
+        document.getElementById('tNif').value = obj.titular.nif || '';
+      }
+      gravar(); render(); alert('✔ ' + dados.length + ' registos restaurados!');
+    }
+  } catch (e) { alert('Texto inválido.'); }
+}
+function limpar() {
+  editId = null;
+  document.getElementById('fName').value = ''; document.getElementById('fVal').value = '';
+  document.getElementById('fReason').value = ''; document.getElementById('fLoanDate').value = hoje();
+  document.getElementById('fDate').value = ''; document.getElementById('fStatus').value = 'unpaid';
+  document.getElementById('fObs').value = ''; document.getElementById('fBox').classList.remove('edit-mode');
+  document.getElementById('fTit').innerText = '➕ Registar Nova Dívida';
+  document.getElementById('bSub').innerText = '➕ Adicionar Dívida';
+  document.getElementById('bSub').className = 'btn b-blue';
+  document.getElementById('bCan').style.display = 'none';
+}
+
+function salvar() {
+  var nome = document.getElementById('fName').value.trim();
+  var val = parseFloat(document.getElementById('fVal').value.replace(',', '.'));
+  var mot = document.getElementById('fReason').value.trim() || 'Empréstimo';
+  var dtEmp = fmtData(document.getElementById('fLoanDate').value || hoje());
+  var dtLim = document.getElementById('fDate').value || 'A combinar';
+  var met = document.getElementById('fMethod').value;
+  var pago = document.getElementById('fStatus').value === 'paid';
+  var obs = document.getElementById('fObs').value.trim();
+
+  if (!nome || isNaN(val) || val <= 0) return alert('Preenche o Nome e um Valor válido!');
+
+  if (editId !== null) {
+    dados.forEach(function(d) {
+      if (d.id === editId) {
+        d.nome = nome; d.valor = val; d.motivo = mot; d.dataHoje = dtEmp; d.dataLim = dtLim; d.metodo = met; d.pago = pago; d.obs = obs;
+        if (pago) d.pagoVal = val; else if (jaPago(d) >= val) d.pagoVal = 0;
+      }
+    });
+  } else {
+    dados.unshift({ id: Date.now(), nome: nome, valor: val, pagoVal: pago ? val : 0, motivo: mot, dataHoje: dtEmp, dataLim: dtLim, metodo: met, pago: pago, obs: obs });
+  }
+  limpar(); gravar(); render();
+}
+
+function abater(id) {
+  var item = dados.filter(function(x) { return x.id === id; }).pop();
+  if (!item) return;
+  var pg = jaPago(item), falta = +(Number(item.valor) - pg).toFixed(2);
+  if (falta <= 0.009) return alert('Dívida já paga.');
+  var s = prompt('Quanto pagou ' + item.nome + ' agora?\n(Em falta: ' + eur(falta) + ')', falta.toFixed(2).replace('.', ','));
+  if (s === null) return;
+  var q = parseFloat(s.replace(',', '.'));
+  if (isNaN(q) || q <= 0) return alert('Valor inválido.');
+  var apl = Math.min(falta, +q.toFixed(2));
+  item.pagoVal = +(pg + apl).toFixed(2);
+  item.pago = (item.pagoVal >= Number(item.valor) - 0.009);
+  var nota = 'Abate: ' + eur(apl) + ' (' + fmtData(hoje()) + ')';
+  item.obs = item.obs ? (item.obs + ' | ' + nota) : nota;
+  gravar(); render();
+}
+
+function est(id, v) {
+  dados.forEach(function(d) { if (d.id === id) { d.pago = (v === 'paid'); d.pagoVal = d.pago ? Number(d.valor) : 0; } });
+  gravar(); render();
+}
+
+function apagar(id) { if (confirm('Apagar registo?')) { dados = dados.filter(function(d) { return d.id !== id; }); gravar(); render(); } }
+
+function editar(id) {
+  var d = dados.filter(function(x) { return x.id === id; }).pop();
+  if (!d) return;
+  editId = id;
+  document.getElementById('fName').value = d.nome; document.getElementById('fVal').value = Number(d.valor).toFixed(2).replace('.', ',');
+  document.getElementById('fReason').value = d.motivo; document.getElementById('fLoanDate').value = paraISO(d.dataHoje);
+  document.getElementById('fDate').value = (d.dataLim && d.dataLim !== 'A combinar') ? d.dataLim : '';
+  document.getElementById('fMethod').value = d.metodo; document.getElementById('fStatus').value = d.pago ? 'paid' : 'unpaid';
+  document.getElementById('fObs').value = d.obs || ''; document.getElementById('fBox').classList.add('edit-mode');
+  document.getElementById('fTit').innerText = '✏️ A Editar: ' + d.nome;
+  document.getElementById('bSub').innerText = '💾 Guardar Alterações'; document.getElementById('bSub').className = 'btn b-edit';
+  document.getElementById('bCan').style.display = 'inline-block'; window.scrollTo(0, 0);
+}
+function render() {
+  var owed = 0, paid = 0, h = '';
+  dados.forEach(function(d) {
+    var pg = jaPago(d), falta = Math.max(0, +(Number(d.valor) - pg).toFixed(2));
+    paid += pg; owed += falta;
+    var n = d.nome.replace(/'/g, "\\'");
+    var vTxt = (pg > 0 && falta > 0.009)
+      ? '<span style="font-weight:bold;color:#dc2626">' + eur(falta) + '</span> <small style="color:#475569">(pago ' + eur(pg) + ' de ' + eur(d.valor) + ')</small>'
+      : '<span style="font-weight:bold;color:' + (falta <= 0.009 ? '#15803d' : '#dc2626') + '">' + eur(falta <= 0.009 ? d.valor : falta) + '</span>';
+
+    h += '<div class="item"><div><b>' + d.nome + '</b> — ' + vTxt + ' <small>(' + d.metodo + ')</small><br>' +
+      '<small style="color:#64748b">' + d.motivo + ' | Data: ' + d.dataHoje + ' | Limite: ' + fmtData(d.dataLim) + '</small>' +
+      (d.obs ? '<div class="obs"><b>Obs.:</b> ' + d.obs + '</div>' : '') + '</div>' +
+      '<div class="right"><select onchange="est(' + d.id + ',this.value)"><option value="unpaid"' + (falta > 0.009 ? ' selected' : '') + '>' + (pg > 0 && falta > 0.009 ? '⏳ Parcial (' + eur(falta) + ')' : '⏳ Por Pagar') + '</option><option value="paid"' + (falta <= 0.009 ? ' selected' : '') + '>✔ Pago</option></select>' +
+      '<div class="acts">' +
+        (falta > 0.009 ? '<button type="button" class="btn b-abate" onclick="abater(' + d.id + ')">💶 Abater</button>' : '') +
+        '<button type="button" class="btn b-edit" onclick="editar(' + d.id + ')">✏️ Editar</button>' +
+        '<button type="button" class="btn b-word" onclick="abrirDoc(\'' + n + '\',false)">📘 Word</button>' +
+        '<button type="button" class="btn b-pdf" onclick="abrirDoc(\'' + n + '\',true)">📕 PDF</button>' +
+        '<button type="button" class="btn b-gray" onclick="copiar(\'' + n + '\')">📋 Copiar</button>' +
+        '<button type="button" class="btn b-pdf" onclick="apagar(' + d.id + ')">🗑</button>' +
+      '</div></div></div>';
+  });
+  document.getElementById('tOwed').innerText = eur(owed);
+  document.getElementById('tPaid').innerText = eur(paid);
+  document.getElementById('lista').innerHTML = h || 'Sem registos.';
+}
+
+function copiar(nome) {
+  var tit = document.getElementById('tNome').value || 'BRUNO MONTEIRO', tel = document.getElementById('tTel').value || '919627945';
+  var itens = dados.filter(function(d) { return d.nome.toLowerCase() === nome.toLowerCase(); });
+  var div = 0, txt = 'EXTRATO — ' + tit + '\nDEVEDOR: ' + nome.toUpperCase() + '\n----------------\n';
+  itens.forEach(function(it, i) {
+    var pg = jaPago(it), falta = Math.max(0, +(Number(it.valor) - pg).toFixed(2)); div += falta;
+    txt += (i + 1) + '. ' + it.motivo + ' (' + (falta <= 0.009 ? 'PAGO' : 'Em falta: ' + eur(falta)) + ') - ' + eur(it.valor) + '\n   Data: ' + it.dataHoje + ' | Limite: ' + fmtData(it.dataLim) + ' (' + it.metodo + ')\n';
+    if (it.obs) txt += '   Obs.: ' + it.obs + '\n';
+  });
+  txt += '----------------\nSALDO DEVEDOR: ' + eur(div) + '\nMB WAY: ' + tel;
+  var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  alert('Copiado!');
+}
+
+function fecharPdf() {
+  document.getElementById('modalPdf').style.display = 'none';
+  document.getElementById('appPrincipal').style.display = 'block';
+}
+function abrirDoc(nome, isPdf) {
+  var tit = document.getElementById('tNome').value || 'BRUNO MONTEIRO', tel = document.getElementById('tTel').value || '919627945', nif = document.getElementById('tNif').value;
+  var itens = nome ? dados.filter(function(d) { return d.nome.toLowerCase() === nome.toLowerCase(); }) : dados;
+  if (!itens.length) return alert('Sem registos.');
+  var tot = 0, pag = 0, div = 0, rows = '';
+  itens.forEach(function(it, i) {
+    var pg = jaPago(it), falta = Math.max(0, +(Number(it.valor) - pg).toFixed(2));
+    tot += Number(it.valor); pag += pg; div += falta;
+    rows += '<tr><td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:center;">' + (i + 1) + '</td>' +
+      (!nome ? '<td style="border-bottom:1px solid #cbd5e1;padding:7px;"><b>' + it.nome + '</b></td>' : '') +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;white-space:nowrap;">' + it.dataHoje + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;"><b>' + it.motivo + '</b>' + (it.obs ? '<br><small>Obs.: ' + it.obs + '</small>' : '') + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:center;white-space:nowrap;">' + it.metodo + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:right;white-space:nowrap;">' + eur(it.valor) + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:right;white-space:nowrap;color:#15803d;">' + eur(pg) + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:right;white-space:nowrap;font-weight:bold;">' + eur(falta) + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:center;white-space:nowrap;font-weight:bold;color:' + (falta <= 0.009 ? '#15803d' : '#b91c1c') + '">' + (falta <= 0.009 ? 'PAGO' : (pg > 0 ? 'PARCIAL' : 'POR PAGAR')) + '</td></tr>';
+  });
+  var dtHoje = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
+  var corpo = '<table style="width:100%;border-bottom:3px solid #0f172a;margin-bottom:16px;"><tr><td><h1 style="margin:0;font-size:18pt;">' + (nome ? 'EXTRATO DE CONTA CORRENTE' : 'RELATÓRIO GERAL DE CRÉDITOS') + '</h1></td><td style="text-align:right;white-space:nowrap;"><b>Data:</b> ' + dtHoje + '<br><b>Divisa:</b> Euro (€)</td></tr></table>' +
+    '<table style="width:100%;margin-bottom:16px;"><tr><td style="width:48%;border:1px solid #cbd5e1;background:#f8fafc;padding:10px;"><small>TITULAR / CREDOR</small><br><b style="font-size:12pt;">' + tit + '</b><br>MB WAY: ' + tel + (nif ? ' | NIF: ' + nif : '') + '</td><td style="width:4%"></td><td style="width:48%;border:1px solid #cbd5e1;background:#f8fafc;padding:10px;"><small>DEVEDOR</small><br><b style="font-size:12pt;">' + (nome ? nome.toUpperCase() : 'TODOS OS DEVEDORES') + '</b><br>Registos: ' + itens.length + '</td></tr></table>' +
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:9pt;"><thead><tr style="background:#0f172a;color:#fff;"><th style="padding:7px;">#</th>' + (!nome ? '<th style="padding:7px;text-align:left;">Devedor</th>' : '') + '<th style="padding:7px;text-align:left;">Data</th><th style="padding:7px;text-align:left;">Descrição / Obs.</th><th style="padding:7px;">Pagamento</th><th style="padding:7px;text-align:right;">Inicial</th><th style="padding:7px;text-align:right;">Pago</th><th style="padding:7px;text-align:right;">Em Falta</th><th style="padding:7px;">Estado</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<table style="width:100%;margin-bottom:24px;"><tr><td style="width:52%;"><div style="background:#f1f5f9;border-left:4px solid #0f172a;padding:10px;"><b>Liquidação:</b> MB WAY <b>' + tel + '</b> (' + tit + ') ou Numerário.</div></td><td style="width:48%;"><table style="width:100%;border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1;padding:7px;">Total Acordado:</td><td style="border:1px solid #cbd5e1;padding:7px;text-align:right;">' + eur(tot) + '</td></tr><tr><td style="border:1px solid #cbd5e1;padding:7px;">Total Pago:</td><td style="border:1px solid #cbd5e1;padding:7px;text-align:right;color:#15803d;">' + eur(pag) + '</td></tr><tr style="background:#0f172a;color:#fff;font-weight:bold;"><td style="border:1px solid #0f172a;padding:9px;">SALDO DEVEDOR:</td><td style="border:1px solid #0f172a;padding:9px;text-align:right;">' + eur(div) + '</td></tr></table></td></tr></table>' +
+    '<br><br><br><table style="width:100%;font-size:9pt;color:#475569;"><tr><td style="width:43%;border-top:1px solid #64748b;padding-top:6px;text-align:center;">O Titular / Credor<br><b>' + tit + '</b></td><td style="width:14%;"></td><td style="width:43%;border-top:1px solid #64748b;padding-top:6px;text-align:center;">' + (nome ? 'O Devedor<br><b>' + nome.toUpperCase() + '</b>' : 'Conferência') + '</td></tr></table>';
+
+  nomeArqAtual = (nome ? 'Extrato_' + nome.split(' ').join('_') : 'Relatorio_Geral') + '.pdf';
+  if (isPdf) {
+    document.getElementById('folhaA4').innerHTML = corpo;
+    document.getElementById('appPrincipal').style.display = 'none';
+    document.getElementById('modalPdf').style.display = 'block';
+  } else {
+    var docWord = '<html><head><meta charset="utf-8"></head><body style="font-family:Calibri,Arial;font-size:10pt;">' + corpo + '</body></html>';
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(new Array('\ufeff', docWord), { type: 'application/msword' }));
+    a.download = nomeArqAtual.replace('.pdf', '.doc'); a.click();
+  }
+}
+
+function partilharPdfReal() {
+  var btn = document.getElementById('btnPartilharPdf');
+  var el = document.getElementById('folhaA4');
+  if (typeof html2pdf === 'undefined') { window.print(); return; }
+  btn.innerText = '⏳ A criar PDF...';
+  var opt = { margin: 8, filename: nomeArqAtual, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+  html2pdf().set(opt).from(el).outputPdf('blob').then(function(pdfBlob) {
+    btn.innerText = '📤 Guardar / Enviar PDF';
+    var file = new File(new Array(pdfBlob), nomeArqAtual, { type: 'application/pdf' });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: new Array(file) })) {
+      navigator.share({ title: nomeArqAtual, files: new Array(file) }).catch(function(){});
+    } else {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(pdfBlob); a.download = nomeArqAtual; a.click();
+    }
+  });
+}
+
+(function() {
+  try {
+    var c = document.createElement('canvas'); c.width = 512; c.height = 512; var ctx = c.getContext('2d');
+    var g = ctx.createLinearGradient(0, 0, 512, 512); g.addColorStop(0, '#0f172a'); g.addColorStop(1, '#1d4ed8');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+    ctx.beginPath(); ctx.arc(256, 220, 115, 0, Math.PI * 2); ctx.fillStyle = '#f59e0b'; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 145px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('€', 252, 228); ctx.font = 'bold 42px Arial'; ctx.fillText('CRÉDITOS', 256, 405);
+    var u = c.toDataURL('image/png');
+    var l1 = document.createElement('link'); l1.rel = 'apple-touch-icon'; l1.href = u; document.head.appendChild(l1);
+    var l2 = document.createElement('link'); l2.rel = 'icon'; l2.href = u; document.head.appendChild(l2);
+  } catch (e) {}
+})();
+
+iniciar();
+</script>
+<style>
+@media screen and (max-width: 760px) {
+  #folhaA4 { zoom: 0.45; margin: 10px auto !important; }
+}
+</style>
+
+<script>
+var docAtual = null;
+
+var abrirDocAntigo = abrirDoc;
+abrirDoc = function(nome, isPdf) {
+  docAtual = nome;
+  abrirDocAntigo(nome, isPdf);
+};
+
+function pdfEnc(txt) {
+  var s = String(txt || '');
+  var map = { '€': '\\200', 'á': '\\341', 'à': '\\340', 'â': '\\342', 'ã': '\\343', 'é': '\\351', 'ê': '\\352', 'í': '\\355', 'ó': '\\363', 'ô': '\\364', 'õ': '\\365', 'ú': '\\372', 'ç': '\\347', 'Á': '\\301', 'À': '\\300', 'Â': '\\302', 'Ã': '\\303', 'É': '\\311', 'Ê': '\\312', 'Í': '\\315', 'Ó': '\\323', 'Ô': '\\324', 'Õ': '\\325', 'Ú': '\\332', 'Ç': '\\307', 'º': '\\272', 'ª': '\\252', '—': '-' };
+  var out = '';
+  for (var i = 0; i < s.length; i++) {
+    var ch = s.charAt(i);
+    if (ch === '(' || ch === ')' || ch === '\\') out += '\\' + ch;
+    else if (map[ch]) out += map[ch];
+    else if (s.charCodeAt(i) < 128) out += ch;
+    else out += ' ';
+  }
+  return out;
+}
+
+function criarPdfNativoBytes(nome) {
+  var tit = document.getElementById('tNome').value || 'BRUNO MONTEIRO';
+  var tel = document.getElementById('tTel').value || '919627945';
+  var nif = document.getElementById('tNif').value;
+  var itens = nome ? dados.filter(function(d) { return d.nome.toLowerCase() === nome.toLowerCase(); }) : dados;
+  var dtHoje = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  var c = '';
+  function txt(x, y, sz, bold, str) {
+    c += 'BT /' + (bold ? 'F2' : 'F1') + ' ' + sz + ' Tf ' + x + ' ' + y + ' Td (' + pdfEnc(str) + ') Tj ET\n';
+  }
+  function linha(x1, y1, x2, y2, w) {
+    c += (w || 1) + ' w ' + x1 + ' ' + y1 + ' m ' + x2 + ' ' + y2 + ' l S\n';
+  }
+  function caixa(x, y, w, h, fill) {
+    if (fill) c += '0.95 0.96 0.98 rg ' + x + ' ' + y + ' ' + w + ' ' + h + ' re f 0 0 0 rg\n';
+    c += '0.75 0.78 0.82 RG 0.8 w ' + x + ' ' + y + ' ' + w + ' ' + h + ' re S 0 0 0 RG\n';
+  }
+
+  txt(40, 790, 16, true, nome ? 'EXTRATO DE CONTA CORRENTE' : 'RELATORIO GERAL DE CREDITOS');
+  txt(445, 792, 9.5, false, 'Data: ' + dtHoje);
+  txt(445, 779, 9.5, false, 'Divisa: Euro (€)');
+  linha(40, 770, 555, 770, 2);
+
+  caixa(40, 705, 245, 52, true);
+  txt(50, 743, 8, false, 'TITULAR / CREDOR');
+  txt(50, 728, 11, true, tit.toUpperCase());
+  txt(50, 714, 9, false, 'MB WAY: ' + tel + (nif ? ' | NIF: ' + nif : ''));
+
+  caixa(310, 705, 245, 52, true);
+  txt(320, 743, 8, false, 'DEVEDOR');
+  txt(320, 728, 11, true, nome ? nome.toUpperCase() : 'TODOS OS DEVEDORES');
+  txt(320, 714, 9, false, 'Registos: ' + itens.length);
+
+  c += '0.06 0.09 0.16 rg 40 672 515 20 re f 1 1 1 rg\n';
+  txt(46, 678, 8.5, true, '#');
+  txt(66, 678, 8.5, true, 'Data');
+  txt(122, 678, 8.5, true, nome ? 'Descricao' : 'Devedor / Descricao');
+  txt(305, 678, 8.5, true, 'Inicial');
+  txt(370, 678, 8.5, true, 'Pago');
+  txt(435, 678, 8.5, true, 'Em Falta');
+  txt(500, 678, 8.5, true, 'Estado');
+  c += '0 0 0 rg\n';
+
+  var y = 654, tot = 0, pag = 0, div = 0;
+  itens.forEach(function(it, i) {
+    if (y < 160) return;
+    var pg = jaPago(it), falta = Math.max(0, +(Number(it.valor) - pg).toFixed(2));
+    tot += Number(it.valor); pag += pg; div += falta;
+    var desc = (nome ? it.motivo : (it.nome + ' - ' + it.motivo)).substring(0, 32);
+    var est = falta <= 0.009 ? 'PAGO' : (pg > 0 ? 'PARCIAL' : 'POR PAGAR');
+
+    txt(46, y, 8.5, false, String(i + 1));
+    txt(66, y, 8.5, false, it.dataHoje);
+    txt(122, y, 8.5, true, desc);
+    txt(305, y, 8.5, false, eur(it.valor));
+    txt(370, y, 8.5, false, eur(pg));
+    txt(435, y, 8.5, true, eur(falta));
+    txt(500, y, 8, true, est);
+    linha(40, y - 6, 555, y - 6, 0.4);
+    y -= 20;
+  });
+
+  y -= 14;
+  caixa(40, y - 48, 265, 52, true);
+  txt(50, y - 16, 9, true, 'Liquidacao:');
+  txt(50, y - 30, 8.5, false, 'MB WAY ' + tel + ' (' + tit + ')');
+  txt(50, y - 42, 8.5, false, 'ou Numerario.');
+
+  caixa(325, y - 48, 230, 52, false);
+  txt(335, y - 14, 9, false, 'Total Acordado:');
+  txt(475, y - 14, 9, false, eur(tot));
+  txt(335, y - 28, 9, false, 'Total Pago:');
+  txt(475, y - 28, 9, false, eur(pag));
+  c += '0.06 0.09 0.16 rg 325 ' + (y - 48) + ' 230 16 re f 1 1 1 rg\n';
+  txt(335, y - 44, 9.5, true, 'SALDO DEVEDOR:');
+  txt(475, y - 44, 9.5, true, eur(div));
+  c += '0 0 0 rg\n';
+
+  var yAss = Math.max(75, y - 120);
+  linha(60, yAss, 240, yAss, 0.8);
+  txt(95, yAss - 14, 8.5, false, 'O Titular / Credor');
+  txt(95, yAss - 26, 8.5, true, tit.toUpperCase());
+
+  linha(345, yAss, 525, yAss, 0.8);
+  txt(385, yAss - 14, 8.5, false, nome ? 'O Devedor' : 'Conferencia');
+  if (nome) txt(385, yAss - 26, 8.5, true, nome.toUpperCase());
+
+  var objs = new Array();
+  objs.push('1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n');
+  objs.push('2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n');
+  objs.push('3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >> endobj\n');
+  objs.push('4 0 obj << /Length ' + c.length + ' >> stream\n' + c + 'endstream endobj\n');
+  objs.push('5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> endobj\n');
+  objs.push('6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >> endobj\n');
+
+  var pdf = '%PDF-1.4\n';
+  var offs = new Array();
+  for (var j = 0; j < objs.length; j++) {
+    offs.push(pdf.length);
+    pdf += objs[j];
+  }
+  var xrefPos = pdf.length;
+  pdf += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n';
+  for (var k = 0; k < offs.length; k++) {
+    pdf += String(offs[k]).padStart(10, '0') + ' 00000 n \n';
+  }
+  pdf += 'trailer << /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF';
+
+  var arr = new Uint8Array(pdf.length);
+  for (var m = 0; m < pdf.length; m++) arr[m] = pdf.charCodeAt(m) & 255;
+  return new Blob(new Array(arr), { type: 'application/pdf' });
+}
+
+partilharPdfReal = function() {
+  var pdfBlob = criarPdfNativoBytes(docAtual);
+  var file = new File(new Array(pdfBlob), nomeArqAtual, { type: 'application/pdf' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: new Array(file) })) {
+    navigator.share({ title: nomeArqAtual, files: new Array(file) }).catch(function(){});
+  } else {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(pdfBlob);
+    a.download = nomeArqAtual;
+    a.click();
+  }
+};
+
+var btnImp = document.querySelector('.pdf-bar .b-pdf');
+if (btnImp) {
+  btnImp.onclick = function() {
+    if (window.navigator.standalone) {
+      partilharPdfReal();
+    } else {
+      window.print();
+    }
+  };
+}
+</script>
+
+</body>
+</html>
+<script>
+(function() {
+  var origAbrir = abrirDoc;
+  abrirDoc = function(nome, isPdf) {
+    var copia = JSON.parse(JSON.stringify(dados));
+    dados.forEach(function(d) {
+      d.motivo = d.motivo + ' (Venc.: ' + fmtData(d.dataLim) + ')';
+    });
+    origAbrir(nome, isPdf);
+    var itens = nome ? copia.filter(function(d) { return d.nome.toLowerCase() === nome.toLowerCase(); }) : copia;
+    var folha = document.getElementById('folhaA4');
+    if (isPdf && folha && nome && itens.length) {
+      var venc = fmtData(itens.slice(0, 1).pop().dataLim);
+      folha.innerHTML = folha.innerHTML.replace('Registos: ' + itens.length, 'Registos: ' + itens.length + '<br><span style="color:#b91c1c;">Vencimento: <b>' + venc + '</b></span>');
+    }
+    dados = copia;
+  };
+
+  var origCriarPdf = criarPdfNativoBytes;
+  criarPdfNativoBytes = function(nome) {
+    var copia = JSON.parse(JSON.stringify(dados));
+    dados.forEach(function(d) {
+      d.motivo = d.motivo + ' (Venc: ' + fmtData(d.dataLim) + ')';
+    });
+    var res = origCriarPdf(nome);
+    dados = copia;
+    return res;
+  };
+})();
+</script>
+</body>
+</html>
